@@ -1,0 +1,207 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minh Tùng Enterprise V6.0</title>
+
+<meta name="theme-color" content="#0A2540">
+<link rel="manifest" href="manifest.json">
+
+<style>
+:root{
+--primary:#0A2540;
+--accent:#0078D4;
+--bg:#F4F6F9;
+--radius:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui;}
+body{background:var(--bg);}
+.container{max-width:1200px;margin:auto;padding:20px;}
+section{padding:60px 0;}
+.btn{
+background:var(--accent);
+color:#fff;
+padding:10px 18px;
+border-radius:var(--radius);
+cursor:pointer;
+border:none;
+}
+.card{
+background:#fff;
+padding:20px;
+border-radius:var(--radius);
+box-shadow:0 5px 20px rgba(0,0,0,.05);
+margin-bottom:20px;
+}
+input,select{
+width:100%;
+padding:10px;
+margin:8px 0;
+border-radius:8px;
+border:1px solid #ccc;
+}
+.nav{
+background:#fff;
+padding:15px;
+display:flex;
+justify-content:space-between;
+box-shadow:0 2px 10px rgba(0,0,0,.05);
+position:sticky;top:0;
+}
+.hidden{display:none;}
+table{
+width:100%;
+border-collapse:collapse;
+}
+th,td{
+padding:8px;
+border:1px solid #ddd;
+text-align:center;
+}
+th{background:#eee;}
+</style>
+</head>
+<body>
+
+<div class="nav">
+<strong>MINH TÙNG ENTERPRISE V6.0</strong>
+<button class="btn" onclick="showLogin()">Admin</button>
+</div>
+
+<div class="container">
+
+<section>
+<h2>Tạo Đơn Hàng</h2>
+
+<select id="product">
+<option value="Ống PVC|50000">Ống PVC - 50.000đ</option>
+<option value="Dây điện|120000">Dây điện - 120.000đ</option>
+</select>
+
+<input type="number" id="qty" placeholder="Số lượng">
+
+<button class="btn" onclick="createOrder()">Tạo đơn</button>
+
+<h3 id="totalDisplay"></h3>
+</section>
+
+<section id="dashboardSection" class="hidden">
+<h2>Dashboard Quản Lý</h2>
+
+<div class="card">
+<p><strong>Tổng Doanh Thu:</strong> <span id="totalRevenue">0</span> đ</p>
+<button class="btn" onclick="exportExcel()">Xuất Excel</button>
+<button class="btn" onclick="clearData()">Xóa dữ liệu</button>
+</div>
+
+<table>
+<thead>
+<tr>
+<th>Thời gian</th>
+<th>Sản phẩm</th>
+<th>Số lượng</th>
+<th>Tổng tiền</th>
+</tr>
+</thead>
+<tbody id="orderTable"></tbody>
+</table>
+
+</section>
+
+<section id="loginSection" class="hidden">
+<h2>Admin Login</h2>
+<input type="password" id="adminPass" placeholder="Nhập mật khẩu">
+<button class="btn" onclick="login()">Đăng nhập</button>
+<p id="loginMsg"></p>
+</section>
+
+</div>
+
+<script>
+if('serviceWorker' in navigator){
+navigator.serviceWorker.register('sw.js');
+}
+
+const ADMIN_PASSWORD="123456";
+
+function createOrder(){
+let data=document.getElementById("product").value.split("|");
+let name=data[0];
+let price=parseInt(data[1]);
+let qty=parseInt(document.getElementById("qty").value);
+if(!qty) return;
+
+let total=price*qty;
+document.getElementById("totalDisplay").innerText="Tổng tiền: "+total.toLocaleString()+" đ";
+
+let order={
+time:new Date().toLocaleString(),
+product:name,
+qty:qty,
+total:total
+};
+
+let orders=JSON.parse(localStorage.getItem("orders")||"[]");
+orders.push(order);
+localStorage.setItem("orders",JSON.stringify(orders));
+loadDashboard();
+}
+
+function loadDashboard(){
+let orders=JSON.parse(localStorage.getItem("orders")||"[]");
+let table=document.getElementById("orderTable");
+table.innerHTML="";
+let revenue=0;
+
+orders.forEach(o=>{
+revenue+=o.total;
+table.innerHTML+=`
+<tr>
+<td>${o.time}</td>
+<td>${o.product}</td>
+<td>${o.qty}</td>
+<td>${o.total.toLocaleString()}</td>
+</tr>`;
+});
+document.getElementById("totalRevenue").innerText=revenue.toLocaleString();
+}
+
+function showLogin(){
+document.getElementById("loginSection").classList.remove("hidden");
+}
+
+function login(){
+let pass=document.getElementById("adminPass").value;
+if(pass===ADMIN_PASSWORD){
+document.getElementById("dashboardSection").classList.remove("hidden");
+document.getElementById("loginSection").classList.add("hidden");
+loadDashboard();
+}else{
+document.getElementById("loginMsg").innerText="Sai mật khẩu";
+}
+}
+
+function clearData(){
+localStorage.removeItem("orders");
+loadDashboard();
+}
+
+function exportExcel(){
+let orders=JSON.parse(localStorage.getItem("orders")||"[]");
+let csv="Time,Product,Quantity,Total\n";
+orders.forEach(o=>{
+csv+=`${o.time},${o.product},${o.qty},${o.total}\n`;
+});
+let blob=new Blob([csv],{type:"text/csv"});
+let link=document.createElement("a");
+link.href=URL.createObjectURL(blob);
+link.download="orders.csv";
+link.click();
+}
+</script>
+
+</body>
+</html>
+Đã gửi
+Viết cho
